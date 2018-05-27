@@ -370,7 +370,7 @@ void AsyncFSWebServer::onWiFiDisconnected(WiFiEventStationModeDisconnected data)
 	if ((disconSince >= 30) && !_restartPending && !_wifiWasConnected) {
 		DEBUGLOG("Wifi connect timeout... starting AP\r\n");
 		this->save_startAP(true);
-		this->restartESP(static_cast<void*>(this));
+		restart();
 	}
 }
 
@@ -1060,7 +1060,7 @@ void AsyncFSWebServer::updateFirmware(bool updSpiffs) {
 					_evsUpd.send(msg.c_str(), "state", 0, 500);
 				}
 				//restart ESP if Update completed
-				if (_restartESP) restartESP(static_cast<void*>(this));
+				if (_restartESP) restart();
 			}, NULL);
 
 			client->onData([this](void* arg, AsyncClient* c, void* data, size_t len) {
@@ -1473,7 +1473,7 @@ void AsyncFSWebServer::serverInit() {
 		if (!this->checkAuth(request))
 			return request->requestAuthentication();
 		request->send_P(200, "text/html", "Restarting...");
-		this->restartESP(static_cast<void*>(this));
+		restart();
 	});
 	on("/admin/actions/factoryReset", HTTP_POST, [this](AsyncWebServerRequest *request) {
 		if (!this->checkAuth(request))
@@ -1643,6 +1643,10 @@ void AsyncFSWebServer::setUpdateCallback(UPDATE_CALLBACK_SIGNATURE) {
 
 void AsyncFSWebServer::setRestartCallback(RESTART_CALLBACK_SIGNATURE) {
 	this->restartcallback = restartcallback;
+}
+
+void AsyncFSWebServer::restart() {
+	this->restartESP(static_cast<void*>(this));
 }
 
 void AsyncFSWebServer::restartESP(void* arg) {

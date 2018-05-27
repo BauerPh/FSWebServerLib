@@ -132,6 +132,7 @@ public:
 	void setVersionString(String s);
 
 	bool factoryReset(bool all);
+	void restart();
 
 	void setJSONCallback(JSON_CALLBACK_SIGNATURE);
 	void setRESTCallback(REST_CALLBACK_SIGNATURE);
