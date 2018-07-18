@@ -531,8 +531,8 @@ void AsyncFSWebServer::send_network_configuration_values_html(AsyncWebServerRequ
 	DEBUGLOG(__FUNCTION__);
 	DEBUGLOG("\r\n");
 	String values = "";
-	values += "ssid|" + String(_config.ssid) + "|input\n";
-	values += "password|" + String(_config.password) + "|input\n";
+	values += "ssid|" + encodeURIComponent(String(_config.ssid)) + "|input\n";
+	values += "password|" + encodeURIComponent(String(_config.password)) + "|input\n";
 	values += "ip|" + _config.ip.toString() + "|input\n";
 	values += "nm|" + _config.netmask.toString() + "|input\n";
 	values += "gw|" + _config.gateway.toString() + "|input\n";
@@ -628,31 +628,31 @@ void AsyncFSWebServer::evaluate_network_post_html(AsyncWebServerRequest *request
 		bool okay = true;
 		for (uint8_t i = 0; i < request->args(); i++) {
 			if (request->argName(i) == "ssid") {
-				_config.ssid = urldecode(request->arg(i));
+				_config.ssid = decodeURIComponent(request->arg(i));
 				continue;
 			}
 			if (request->argName(i) == "password") {
-				_config.password = urldecode(request->arg(i));
+				_config.password = decodeURIComponent(request->arg(i));
 				continue;
 			}
 			if (request->argName(i) == "ip") {
-				okay &= _config.ip.fromString(urldecode(request->arg(i)));
+				okay &= _config.ip.fromString(decodeURIComponent(request->arg(i)));
 				continue;
 			}
 			if (request->argName(i) == "nm") {
-				okay &= _config.netmask.fromString(urldecode(request->arg(i)));
+				okay &= _config.netmask.fromString(decodeURIComponent(request->arg(i)));
 				continue;
 			}
 			if (request->argName(i) == "gw") {
-				okay &= _config.gateway.fromString(urldecode(request->arg(i)));
+				okay &= _config.gateway.fromString(decodeURIComponent(request->arg(i)));
 				continue;
 			}
 			if (request->argName(i) == "dns") {
-				okay &= _config.dns.fromString(urldecode(request->arg(i)));
+				okay &= _config.dns.fromString(decodeURIComponent(request->arg(i)));
 				continue;
 			}
 			if (request->argName(i) == "dhcp") {
-				_config.dhcp = ((urldecode(request->arg(i)) == "true") ? true : false);
+				_config.dhcp = ((decodeURIComponent(request->arg(i)) == "true") ? true : false);
 				continue;
 			}
 		}
@@ -673,7 +673,7 @@ void AsyncFSWebServer::evaluate_NTP_post_html(AsyncWebServerRequest *request) {
 		_config.daylight = false;
 		for (uint8_t i = 0; i < request->args(); i++) {
 			if (request->argName(i) == "ntpserver") {
-				_config.ntpServerName = urldecode(request->arg(i));
+				_config.ntpServerName = decodeURIComponent(request->arg(i));
 				continue;
 			}
 			if (request->argName(i) == "update") {
@@ -685,7 +685,7 @@ void AsyncFSWebServer::evaluate_NTP_post_html(AsyncWebServerRequest *request) {
 				continue;
 			}
 			if (request->argName(i) == "dst") {
-				_config.daylight = ((urldecode(request->arg(i)) == "true") ? true : false);
+				_config.daylight = ((decodeURIComponent(request->arg(i)) == "true") ? true : false);
 				continue;
 			}
 		}
@@ -709,13 +709,13 @@ void AsyncFSWebServer::evaluate_system_post_html(AsyncWebServerRequest *request)
 		bool req_restart = false;
 		for (uint8_t i = 0; i < request->args(); i++) {
 			if (request->argName(i) == "devicename") {
-				String tmpDevicename = urldecode(request->arg(i));
+				String tmpDevicename = decodeURIComponent(request->arg(i));
 				req_restart = (_config.deviceName != tmpDevicename);
 				_config.deviceName = tmpDevicename;
 				continue;
 			}
 			if (request->argName(i) == "updateServer") {
-				String tmpString = urldecode(request->arg(i));
+				String tmpString = decodeURIComponent(request->arg(i));
 				//remove http:// or https://
 				if (tmpString.startsWith("http://") && (tmpString.length() > 7)) tmpString = tmpString.substring(7);
 				if (tmpString.startsWith("https://") && (tmpString.length() > 8)) tmpString = tmpString.substring(8);
@@ -733,15 +733,15 @@ void AsyncFSWebServer::evaluate_system_post_html(AsyncWebServerRequest *request)
 				continue;
 			}
 			if (request->argName(i) == "wwwuser") {
-				_httpAuth.wwwUsername = urldecode(request->arg(i));
+				_httpAuth.wwwUsername = decodeURIComponent(request->arg(i));
 				continue;
 			}
 			if (request->argName(i) == "wwwpass") {
-				_httpAuth.wwwPassword = urldecode(request->arg(i));
+				_httpAuth.wwwPassword = decodeURIComponent(request->arg(i));
 				continue;
 			}
 			if (request->argName(i) == "wwwauth") {
-				_httpAuth.auth = ((urldecode(request->arg(i)) == "true") ? true : false);
+				_httpAuth.auth = ((decodeURIComponent(request->arg(i)) == "true") ? true : false);
 				continue;
 			}
 		}
@@ -1681,7 +1681,7 @@ boolean AsyncFSWebServer::checkRange(String Value) {
 }
 
 // convert a single hex digit character to its integer value (from https://code.google.com/p/avr-netino/)
-unsigned char AsyncFSWebServer::h2int(char c) {
+unsigned char AsyncFSWebServer::hex2int(char c) {
 	if (c >= '0' && c <= '9') {
 		return((unsigned char)c - '0');
 	}
@@ -1694,8 +1694,18 @@ unsigned char AsyncFSWebServer::h2int(char c) {
 	return(0);
 }
 
+char AsyncFSWebServer::int2hex(unsigned char c) {
+	if (c >= 0 && c <= 9) {
+		return('0' + (char)c);
+	}
+	if (c >= 10 && c <= 15) {
+		return('A' + (char)c - 10);
+	}
+	return('0');
+}
+
 // (based on https://code.google.com/p/avr-netino/)
-String AsyncFSWebServer::urldecode(String input) {
+String AsyncFSWebServer::decodeURIComponent(String input) {
 	char c;
 	String ret = "";
 
@@ -1706,9 +1716,29 @@ String AsyncFSWebServer::urldecode(String input) {
 			t++;
 			c = input[t];
 			t++;
-			c = (h2int(c) << 4) | h2int(input[t]);
+			c = (hex2int(c) << 4) | hex2int(input[t]);
 		}
 		ret.concat(c);
+	}
+	return ret;
+}
+
+// accepted Characters: A-Z a-z 0-9 - _ . ! ~ * ' ( )
+String AsyncFSWebServer::encodeURIComponent(String input) {
+	char c;
+	String ret = "";
+
+	for (byte t = 0; t < input.length(); t++) {
+		c = input[t];
+		//accepted?
+		if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '_' || c == '.' || c == '!' || c == '~' || c == '*' || c == 0x27 || c == '(' || c == ')') {
+			ret.concat(c);
+			continue;
+		}
+		//not accepted => encode
+		ret.concat('%');
+		ret.concat(int2hex((unsigned char)c >> 4));
+		ret.concat(int2hex((unsigned char)c & 0x0F));
 	}
 	return ret;
 }

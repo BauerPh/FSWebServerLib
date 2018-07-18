@@ -220,8 +220,10 @@ protected:
 	Ticker _LEDTk;
 	static void s_toggleLED();
 
-	static String urldecode(String input);
-	static unsigned char h2int(char c);
+	static String decodeURIComponent(String input);
+	static String encodeURIComponent(String input);
+	static char int2hex(unsigned char c);
+	static unsigned char hex2int(char c);
 	static boolean checkRange(String Value);
 	static String formatBytes(size_t bytes);
 };
